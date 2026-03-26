@@ -1,45 +1,44 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/user.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
+import { UserRepository } from './infrastructure/repo/user.repository';
+import { User } from './domain/model/user.model';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
     private jwtService: JwtService,
+    private userRepository: UserRepository,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<AuthResponseDto> {
     const { email, password, username } = createUserDto;
-    const exitsingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
-    if (exitsingUser) {
+    const exitsingUserEmail = await this.userRepository.findByEmail(email);
+    if (exitsingUserEmail) {
       throw new Error('User already exists');
+    }
+    const existingUserName = await this.userRepository.findByUsername(username);
+    if (existingUserName) {
+      throw new Error('Username already exists');
     }
     try {
       const hashPassword = await bcrypt.hash(password, 10);
-      const user = await this.prisma.user.create({
-        data: {
-          email,
-          password: hashPassword,
-          username,
-        },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          password: false,
-        },
+      const user = User.create({
+        email,
+        username,
+        password: hashPassword,
       });
-      const tokens = await this.generateToken(user.id, user.email);
-      await this.updateRefreshToken(user.id, tokens.refreshToken);
+      const createdUser = await this.userRepository.create(user);
+      const tokens = await this.generateToken(
+        createdUser.id,
+        createdUser.email,
+      );
+      await this.updateRefreshToken(createdUser.id, tokens.refreshToken);
       return {
-        user,
+        user: createdUser,
         ...tokens,
       };
     } catch (error) {
@@ -60,21 +59,11 @@ export class AuthService {
   }
   private async updateRefreshToken(userId: string, refreshToken: string) {
     const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: hashRefreshToken },
-    });
+    await this.userRepository.updateRefreshToken(userId, hashRefreshToken);
   }
 
   async refreshToken(userId: string): Promise<AuthResponseDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-      },
-    });
+    const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
@@ -87,10 +76,7 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
-    });
+    await this.userRepository.logout(userId);
   }
 
   async login(loginDto: {
@@ -98,9 +84,7 @@ export class AuthService {
     password: string;
   }): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.userRepository.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
