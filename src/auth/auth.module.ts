@@ -7,6 +7,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { UserRepository } from './infrastructure/repo/user.repository';
+import { SessionRepository } from './infrastructure/repo/session.repository';
+import { TokenLimitRepository } from './infrastructure/repo/token-limit.repository';
 
 @Module({
   imports: [
@@ -19,7 +21,14 @@ import { UserRepository } from './infrastructure/repo/user.repository';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, UserRepository],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    UserRepository,
+    SessionRepository,
+    TokenLimitRepository,
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {}

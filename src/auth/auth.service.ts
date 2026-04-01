@@ -6,16 +6,23 @@ import { randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from './infrastructure/repo/user.repository';
 import { User } from './domain/model/user.model';
+import { SessionRepository } from './infrastructure/repo/session.repository';
+import { Sessions } from './domain/model/session.model';
+import { TokenLimitRepository } from './infrastructure/repo/token-limit.repository';
+import { TokenLimit } from './domain/model/token-limit.model';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private userRepository: UserRepository,
+    private sessionRepository: SessionRepository,
+    private tokenLimitRepository: TokenLimitRepository,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<AuthResponseDto> {
     const { email, password, username } = createUserDto;
+    console.log(createUserDto);
     const exitsingUserEmail = await this.userRepository.findByEmail(email);
     if (exitsingUserEmail) {
       throw new Error('User already exists');
@@ -37,14 +44,22 @@ export class AuthService {
         createdUser.email,
       );
       await this.updateRefreshToken(createdUser.id, tokens.refreshToken);
+      const userData = await this.userRepository.findById(createdUser.id);
+      await this.generateTokenLimit(createdUser.id);
       return {
-        user: createdUser,
+        user: userData,
         ...tokens,
       };
     } catch (error) {
       throw new Error('Error creating user');
     }
   }
+
+  private async generateTokenLimit(userId: string): Promise<void> {
+    const tokenLimit = TokenLimit.create({ userId });
+    await this.tokenLimitRepository.tokenCreate(tokenLimit);
+  }
+
   private async generateToken(
     userId: string,
     email: string,
@@ -79,10 +94,13 @@ export class AuthService {
     await this.userRepository.logout(userId);
   }
 
-  async login(loginDto: {
-    email: string;
-    password: string;
-  }): Promise<AuthResponseDto> {
+  async login(
+    loginDto: {
+      email: string;
+      password: string;
+    },
+    req: any,
+  ): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
@@ -94,9 +112,28 @@ export class AuthService {
     }
     const tokens = await this.generateToken(user.id, user.email);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    const ipAddress = req.ip;
+    const session = Sessions.create({
+      userId: user.id,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      ipAddress: ipAddress,
+    });
+    await this.sessionRepository.createSession(session);
+
     return {
       user,
       ...tokens,
     };
+  }
+  async getProfile(userId: string) {
+    {
+      const tokenLimit = await this.tokenLimitRepository.findByUserId(userId);
+      const user = await this.userRepository.findById(userId);
+      return {
+        user,
+        tokenLimit,
+      };
+    }
   }
 }

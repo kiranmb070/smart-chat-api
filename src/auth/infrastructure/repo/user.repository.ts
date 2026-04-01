@@ -25,7 +25,6 @@ export class UserRepository {
     const data = await this.prisma.user.findUnique({
       where: { email },
     });
-
     return data ? User.ofExisting(data) : null;
   }
 
@@ -33,7 +32,6 @@ export class UserRepository {
     const data = await this.prisma.user.findUnique({
       where: { id },
     });
-
     return data ? User.ofExisting(data) : null;
   }
 

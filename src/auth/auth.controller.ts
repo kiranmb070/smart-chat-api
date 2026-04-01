@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/user.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -6,6 +6,7 @@ import { RefreshTokenGuard } from './guards/refresh-token.guards';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +16,7 @@ export class AuthController {
   async register(
     @Body() createUserDto: CreateUserDto,
   ): Promise<AuthResponseDto> {
+    console.log('registraion');
     return await this.authService.register(createUserDto);
   }
   @Post('refresh')
@@ -30,7 +32,16 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return await this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    return await this.authService.login(loginDto, req);
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@GetUser('id') userId: string) {
+    return await this.authService.getProfile(userId);
   }
 }
