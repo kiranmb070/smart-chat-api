@@ -21,8 +21,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions   Session[]
-  tokenLimit TokenLimit?
+  sessions          Session[]
+  tokenLimit        TokenLimit?
+  conversations     Conversation[]
+  tokenTransactions TokenTransaction[]
 
   @@map("users")
 }
@@ -54,4 +56,80 @@ model TokenLimit {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("token_limit")
+}
+
+model Conversation {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  title           String   @default("New Chat")
+  model           String   @default("Ollama3.2")
+  totalTokensUsed Int      @default(0) @map("total_tokens_used")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+  
+   @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String      @map("conversation_id")
+  role           MessageRole 
+  content        String
+  tokensUsed     Int         @default(0) @map("tokens_used")
+  orderIndex     Int         @map("order_index")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  conversation Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  chunks       MessageChunk[]
+  
+ 
+  @@index([conversationId, orderIndex])
+  @@map("messages")
+}
+
+model MessageChunk {
+  id         String   @id @default(cuid())
+  messageId  String   @map("message_id")
+  chunkText  String   @map("chunk_text")
+  embedding  String?
+  chunkIndex Int      @map("chunk_index")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("message_chunks")
+}
+
+model TokenTransaction {
+  id             String          @id @default(cuid())
+  userId         String          @map("user_id")
+  conversationId String?         @map("conversation_id")
+  tokensUsed     Int             @map("tokens_used")
+  model          String
+  type           TransactionType
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@map("token_transactions")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum TransactionType {
+  CHAT
+  RESET
+  BONUS
+  DEDUCTION
 }
