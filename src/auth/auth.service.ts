@@ -136,4 +136,17 @@ export class AuthService {
       };
     }
   }
+  async updateTokenLimit(
+    usedId: string,
+    usedTokens: number,
+    remainingTokens: number,
+    tokenUsed: number,
+  ): Promise<void> {
+    await this.tokenLimitRepository.updateTokenLimit(
+      usedId,
+      usedTokens,
+      remainingTokens,
+      tokenUsed,
+    );
+  }
 }

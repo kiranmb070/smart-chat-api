@@ -59,7 +59,7 @@ model TokenLimit {
 }
 
 model Conversation {
-  id              String   @id @default(cuid())
+  id              String   @id @default(uuid())
   userId          String   @map("user_id")
   title           String   @default("New Chat")
   model           String   @default("Ollama3.2")
@@ -75,7 +75,7 @@ model Conversation {
 }
 
 model Message {
-  id             String      @id @default(cuid())
+  id             String      @id @default(uuid())
   conversationId String      @map("conversation_id")
   role           MessageRole 
   content        String
@@ -92,7 +92,7 @@ model Message {
 }
 
 model MessageChunk {
-  id         String   @id @default(cuid())
+  id         String   @id @default(uuid())
   messageId  String   @map("message_id")
   chunkText  String   @map("chunk_text")
   embedding  String?
@@ -105,7 +105,7 @@ model MessageChunk {
 }
 
 model TokenTransaction {
-  id             String          @id @default(cuid())
+  id             String          @id @default(uuid())
   userId         String          @map("user_id")
   conversationId String?         @map("conversation_id")
   tokensUsed     Int             @map("tokens_used")

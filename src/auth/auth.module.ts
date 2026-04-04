@@ -30,5 +30,6 @@ import { TokenLimitRepository } from './infrastructure/repo/token-limit.reposito
     TokenLimitRepository,
   ],
   controllers: [AuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}

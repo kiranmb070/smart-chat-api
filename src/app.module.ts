@@ -6,6 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { AiModule } from './ai/ai.module';
 import { ConversationModule } from './conversation/conversation.module';
+import { MessageModule } from './message/message.module';
+import { TokenTransactionModule } from './message/token-transaction/token-transaction.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { ConversationModule } from './conversation/conversation.module';
     AuthModule,
     AiModule,
     ConversationModule,
+    MessageModule,
+    TokenTransactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -29,4 +29,21 @@ export class TokenLimitRepository {
     }
     return TokenLimit.ofExisting(tokenLimitData);
   }
+
+  async updateTokenLimit(
+    userId: string,
+    usedTokens: number,
+    remainingTokens: number,
+    tokenUsed: number,
+  ): Promise<TokenLimit> {
+    const updatedTokenLimit = await this.prisma.tokenLimit.update({
+      where: { userId },
+      data: {
+        usedTokens: usedTokens + tokenUsed,
+        remainingTokens: remainingTokens - tokenUsed,
+        updatedAt: new Date(),
+      },
+    });
+    return TokenLimit.ofExisting(updatedTokenLimit);
+  }
 }
