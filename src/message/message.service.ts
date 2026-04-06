@@ -31,6 +31,8 @@ export class MessageService {
       .getProfile(userId)
       .then((profile) => profile.tokenLimit);
 
+    console.log('User token limit:', tokenLimit);
+
     // if (!tokenLimit || tokenLimit.remainingTokens <= 0) {
     //   throw new HttpException(
     //     {
@@ -45,6 +47,7 @@ export class MessageService {
     // 3. get current message count for orderIndex
     const count =
       await this.prismaMessageRepository.countByConversationId(conversationId);
+    console.log('Current message count in conversation:', count);
 
     // 4. save user message
     const userMessage = Message.create({
@@ -56,6 +59,8 @@ export class MessageService {
     const savedUserMsg =
       await this.prismaMessageRepository.saveMessage(userMessage);
 
+    console.log('Saved user message:', savedUserMsg);
+
     // 5. load full history for AI context
     const history =
       await this.prismaMessageRepository.getMessagesByConversationId(
@@ -66,8 +71,11 @@ export class MessageService {
       content: m.content,
     }));
 
+    console.log('aimessage', aiMessages);
+
     // 6. call Ollama AI
     const aiResponse = await this.aiService.chat(aiMessages);
+    console.log('Ollama replied ✅ tokens:', aiResponse.tokensUsed);
 
     // 7. save AI reply
     const aiMessage = Message.create({
@@ -79,6 +87,9 @@ export class MessageService {
     });
     const savedAiMsg =
       await this.prismaMessageRepository.saveMessage(aiMessage);
+
+    console.log('ASSISTANT message saved ✅');
+    console.log('Saving AI message:', aiMessage);
 
     // 8. deduct tokens from user balance
     await this.authService.updateTokenLimit(

@@ -24,7 +24,7 @@ export class AiController {
   @ApiOperation({ summary: 'Send test message to AI' })
   async chatTest() {
     const response = await this.aiService.chat([
-      { role: 'user', content: 'What is the capital of France?' },
+      { role: 'user', content: 'what is React js ?' },
     ]);
     return {
       reply: response.content,

@@ -20,6 +20,11 @@ export class AiService {
   constructor() {
     this.ollama = new Ollama({
       host: process.env.OLLAMA_HOST ?? 'http://localhost:11434',
+      fetch: (url, options) =>
+        fetch(url, {
+          ...options,
+          signal: AbortSignal.timeout(300_000), // 5 min timeout
+        }),
     });
     this.model = process.env.OLLAMA_MODEL ?? 'llama3.2';
   }
@@ -31,6 +36,8 @@ export class AiService {
         messages: messages,
         stream: false,
       });
+
+      console.log('AI response:', response);
       const content = response.message.content;
       const tokensUsed = response.eval_count ?? this.estimateTokens(content);
       return {
@@ -39,6 +46,11 @@ export class AiService {
         model: this.model,
       };
     } catch (error) {
+      console.error('Ollama error details:', {
+        message: error.message,
+        code: error.code,
+        cause: error.cause,
+      });
       throw new HttpException(
         {
           statusCode: 503,
