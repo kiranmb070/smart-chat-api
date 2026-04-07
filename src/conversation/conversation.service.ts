@@ -18,7 +18,6 @@ export class ConversationService {
     userId: string,
     dto: CreateConversationDto,
   ): Promise<ConversationResponesDto> {
-    console.log('Creating conversation with title:', userId);
     const conversation = Conversation.create(userId, dto.title, dto.model);
     return this.conversationRepository.createConversation(conversation);
   }

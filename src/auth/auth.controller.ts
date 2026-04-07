@@ -16,7 +16,6 @@ export class AuthController {
   async register(
     @Body() createUserDto: CreateUserDto,
   ): Promise<AuthResponseDto> {
-    console.log('registraion');
     return await this.authService.register(createUserDto);
   }
   @Post('refresh')

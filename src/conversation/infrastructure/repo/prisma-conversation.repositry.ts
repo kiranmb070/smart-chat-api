@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConversationNotFoundException } from 'src/conversation/domain/exceptions/conversation-not-found.exception';
 import { Conversation } from 'src/conversation/domain/model/conversation.model';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -22,6 +23,9 @@ export class PrismaConversationRepository {
   }
 
   async findById(id: string): Promise<Conversation | null> {
+    if (!id) {
+      throw new ConversationNotFoundException(id);
+    }
     const data = await this.prisma.conversation.findUnique({
       where: { id },
     });
@@ -37,6 +41,9 @@ export class PrismaConversationRepository {
   }
 
   async updateConversation(conversation: Conversation): Promise<Conversation> {
+    if (!conversation.id) {
+      throw new ConversationNotFoundException(conversation.id);
+    }
     const updatedData = await this.prisma.conversation.update({
       where: { id: conversation.id },
       data: {
@@ -49,6 +56,19 @@ export class PrismaConversationRepository {
   }
 
   async deleteConversation(id: string): Promise<void> {
+    if (!id) {
+      throw new ConversationNotFoundException(id);
+    }
+
+    const isConversationAssociatedWithMessages =
+      await this.prisma.message.findFirst({
+        where: { conversationId: id },
+      });
+
+    if (isConversationAssociatedWithMessages) {
+      throw new ConversationNotFoundException(id);
+    }
+
     await this.prisma.conversation.delete({
       where: { id },
     });

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/user.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import * as bcrypt from 'bcrypt';
@@ -10,6 +10,7 @@ import { SessionRepository } from './infrastructure/repo/session.repository';
 import { Sessions } from './domain/model/session.model';
 import { TokenLimitRepository } from './infrastructure/repo/token-limit.repository';
 import { TokenLimit } from './domain/model/token-limit.model';
+import { UnauthorizedException } from './domain/exceptions/unauthorized.exception';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +23,6 @@ export class AuthService {
 
   async register(createUserDto: CreateUserDto): Promise<AuthResponseDto> {
     const { email, password, username } = createUserDto;
-    console.log(createUserDto);
     const exitsingUserEmail = await this.userRepository.findByEmail(email);
     if (exitsingUserEmail) {
       throw new Error('User already exists');
@@ -80,7 +80,7 @@ export class AuthService {
   async refreshToken(userId: string): Promise<AuthResponseDto> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException(userId);
     }
     const tokens = await this.generateToken(user.id, user.email);
     await this.updateRefreshToken(user.id, tokens.refreshToken);

@@ -27,7 +27,6 @@ export class ConversationController {
     @GetUser('id') userId: string,
     @Body() dto: CreateConversationDto,
   ) {
-    console.log('Received request to create conversation with title:', userId);
     return await this.conversationService.createConverstion(userId, dto);
   }
 

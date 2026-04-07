@@ -1,5 +1,6 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Ollama } from 'ollama';
+import { ServiceUnavailableException } from './exceptions/service-unavailable.exception';
 
 export interface ChatMessage {
   role: string;
@@ -36,8 +37,6 @@ export class AiService {
         messages: messages,
         stream: false,
       });
-
-      console.log('AI response:', response);
       const content = response.message.content;
       const tokensUsed = response.eval_count ?? this.estimateTokens(content);
       return {
@@ -51,14 +50,7 @@ export class AiService {
         code: error.code,
         cause: error.cause,
       });
-      throw new HttpException(
-        {
-          statusCode: 503,
-          message: 'AI unavailable. Make sure Ollama is running: ollama serve',
-          error: 'Service Unavailable',
-        },
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
+      throw new ServiceUnavailableException();
     }
   }
 

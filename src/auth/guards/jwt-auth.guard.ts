@@ -7,7 +7,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     super();
   }
   canActivate(context: ExecutionContext) {
-    console.log('JwtAuthGuard: Checking authentication for request');
     return super.canActivate(context);
   }
 }
